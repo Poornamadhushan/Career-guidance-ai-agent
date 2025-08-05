@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Career Guidance Agent </title>
+    <title>Career Guidance Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .gradient-bg{
+        .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-  <div class="gradient-bg py-12">
-    <div  class="container mx-auto p-4">
-        <div class="text-center text-white mb-8 ">
-            <h1 class ="text-4xl font-bold mb-4">Career Guidance Agent</h1>
-            <p class ="text-4xl font-bold mb-4">Discover your perfect career path based on your interests, skills, and education</p>
+    <div class="gradient-bg py-12">
+        <div class="container mx-auto px-4">
+            <div class="text-center text-white mb-8">
+                <h1 class="text-4xl font-bold mb-4">Career Guidance Agent</h1>
+                <p class="text-xl">Discover your perfect career path based on your interests, skills, and education</p>
             </div>
-      </div>
+        </div>
     </div>
 
-    <div class ="container mx-auto px-4 py-8">
-        <div class ="max-w-2xl mx-auto ">
-            <!--career Assesment form -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <!-- Career Assessment Form -->
             <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">Tell us about yourself</h2>
-
+                
                 <form id="careerForm" class="space-y-6">
                     <div>
                         <label for="interests" class="block text-sm font-medium text-gray-700 mb-2">
@@ -44,142 +44,164 @@
 
                     <div>
                         <label for="skills" class="block text-sm font-medium text-gray-700 mb-2">
-                            What are your key skills?
+                            What skills do you have or want to develop?
                         </label>
                         <textarea 
                             id="skills" 
                             name="skills" 
                             rows="3" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="e.g., programming, communication, problem-solving, leadership..."
+                            placeholder="e.g., programming, communication, leadership, data analysis..."
                             required
                         ></textarea>
                     </div>
 
                     <div>
                         <label for="education" class="block text-sm font-medium text-gray-700 mb-2">
-                            Education Background
+                            What is your educational background?
                         </label>
-                        <select 
+                        <textarea 
                             id="education" 
                             name="education" 
+                            rows="3" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="e.g., Computer Science degree, High School, Business certification..."
                             required
-                        >
-                            <option value="">Select your education level</option>
-                            <option value="high-school">High School</option>
-                            <option value="diploma">Diploma</option>
-                            <option value="bachelors">Bachelor's Degree</option>
-                            <option value="masters">Master's Degree</option>
-                            <option value="phd">PhD</option>
-                        </select>
+                        ></textarea>
                     </div>
 
-                    <div>
+                    <div class="flex items-center">
+                        <input 
+                            type="checkbox" 
+                            id="useGPT" 
+                            name="useGPT" 
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        >
+                        <label for="useGPT" class="ml-2 block text-sm text-gray-700">
+                            Use AI-enhanced suggestions (requires OpenAI API key)
+                        </label>
+                    </div>
+
+                    <div class="flex space-x-4">
                         <button 
                             type="submit" 
-                            class="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 px-6 rounded-md hover:from-purple-600 hover:to-blue-600 transition duration-300 font-semibold"
+                            class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 font-medium"
                         >
-                            Get Career Recommendations
+                            Get Career Suggestions
+                        </button>
+                        <button 
+                            type="button" 
+                            id="clearForm"
+                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200"
+                        >
+                            Clear
                         </button>
                     </div>
                 </form>
+            </div>
 
-
+            <!-- Loading Indicator -->
+            <div id="loading" class="hidden text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p class="mt-2 text-gray-600">Finding your perfect career matches...</p>
             </div>
 
             <!-- Results Section -->
-            <div id="results" class="bg-white rounded-lg shadow-lg p-8 hidden">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Your Career Recommendations</h2>
-                <div id="careerRecommendations" class="space-y-4">
-                    <!-- Career recommendations will be displayed here -->
+            <div id="results" class="hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Your Career Suggestions</h2>
+                <div id="careerList" class="space-y-6">
+                    <!-- Career suggestions will be inserted here -->
                 </div>
             </div>
-
         </div>
     </div>
 
     <script>
-        document.getElementById('careerForm').addEventListener('submit', function(e) {
+        const form = document.getElementById('careerForm');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const careerList = document.getElementById('careerList');
+        const clearButton = document.getElementById('clearForm');
+
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             // Get form data
             const interests = document.getElementById('interests').value;
             const skills = document.getElementById('skills').value;
             const education = document.getElementById('education').value;
-            
-            // Simple career recommendation logic (can be enhanced with AI/ML)
-            const recommendations = generateRecommendations(interests, skills, education);
-            
-            // Display results
-            displayResults(recommendations);
+            const useGPT = document.getElementById('useGPT').checked;
+
+            // Show loading, hide results
+            loading.classList.remove('hidden');
+            results.classList.add('hidden');
+
+            try {
+                const response = await fetch('/suggest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        interests: interests,
+                        skills: skills,
+                        education: education,
+                        use_gpt: useGPT
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                displayResults(data.careers);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while getting career suggestions. Please try again.');
+            } finally {
+                loading.classList.add('hidden');
+            }
         });
 
-        function generateRecommendations(interests, skills, education) {
-            // This is a simplified recommendation system
-            // In a real application, this would connect to an AI service
-            const careers = [
-                {
-                    title: "Software Developer",
-                    match: calculateMatch(interests, skills, ["technology", "programming", "problem-solving"]),
-                    description: "Design and develop software applications and systems."
-                },
-                {
-                    title: "Data Scientist",
-                    match: calculateMatch(interests, skills, ["technology", "analysis", "mathematics"]),
-                    description: "Analyze complex data to help organizations make informed decisions."
-                },
-                {
-                    title: "Project Manager",
-                    match: calculateMatch(interests, skills, ["leadership", "organization", "communication"]),
-                    description: "Plan, execute, and oversee projects to ensure successful completion."
-                },
-                {
-                    title: "Teacher",
-                    match: calculateMatch(interests, skills, ["helping people", "communication", "education"]),
-                    description: "Educate and inspire students in various subjects."
-                }
-            ];
-            
-            return careers.sort((a, b) => b.match - a.match).slice(0, 3);
-        }
+        clearButton.addEventListener('click', () => {
+            form.reset();
+            results.classList.add('hidden');
+        });
 
-        function calculateMatch(interests, skills, keywords) {
-            const text = (interests + " " + skills).toLowerCase();
-            let score = 0;
-            keywords.forEach(keyword => {
-                if (text.includes(keyword.toLowerCase())) {
-                    score += 20;
-                }
-            });
-            return Math.min(score + Math.random() * 30, 100);
-        }
-
-        function displayResults(recommendations) {
-            const resultsDiv = document.getElementById('results');
-            const recommendationsDiv = document.getElementById('careerRecommendations');
+        function displayResults(careers) {
+            careerList.innerHTML = '';
             
-            recommendationsDiv.innerHTML = '';
-            
-            recommendations.forEach(career => {
-                const careerDiv = document.createElement('div');
-                careerDiv.className = 'border-l-4 border-blue-500 pl-4 py-2';
-                careerDiv.innerHTML = `
-                    <h3 class="text-lg font-semibold text-gray-800">${career.title}</h3>
-                    <p class="text-gray-600 mb-2">${career.description}</p>
-                    <div class="flex items-center">
-                        <span class="text-sm text-gray-500">Match: </span>
-                        <div class="ml-2 bg-gray-200 rounded-full h-2 w-24">
-                            <div class="bg-blue-500 h-2 rounded-full" style="width: ${career.match}%"></div>
+            careers.forEach((career, index) => {
+                const careerCard = document.createElement('div');
+                careerCard.className = 'bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500';
+                
+                careerCard.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">${career.title}</h3>
+                        <span class="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                            Match ${index + 1}
+                        </span>
+                    </div>
+                    <p class="text-gray-600 mb-4">${career.description}</p>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">Skills Needed:</h4>
+                            <p class="text-sm text-gray-600">${career.skills_needed}</p>
                         </div>
-                        <span class="ml-2 text-sm font-medium">${Math.round(career.match)}%</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">Education Path:</h4>
+                            <p class="text-sm text-gray-600">${career.education_path}</p>
+                        </div>
                     </div>
                 `;
-                recommendationsDiv.appendChild(careerDiv);
+                
+                careerList.appendChild(careerCard);
             });
             
-            resultsDiv.classList.remove('hidden');
-            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+            results.classList.remove('hidden');
+            results.scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 </body>
